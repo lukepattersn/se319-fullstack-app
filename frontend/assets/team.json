@@ -1,0 +1,18 @@
+{
+    "course_name": "Construction of User Interfaces, Spring 2025",
+    "date": "March 2025",
+    "team_members": [
+        {
+            "name": "Jeremiah Baccam",
+            "email": "jjbaccam@iastate.edu",
+            "role": "Frontend Developer",
+            "avatar": "assets/team_images/jeremiah.jpg"
+        },
+        {
+            "name": "Luke Patterson",
+            "email": "lukepatt@iastate.edu",
+            "role": "Frontend Developer",
+            "avatar": "assets/team_images/luke.jpg"
+        }
+    ]
+}

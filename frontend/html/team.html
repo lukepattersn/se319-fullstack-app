@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="auto">
+
+<head>
+    <script src="../assets/js/color-modes.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Explore our delicious menu featuring a variety of handcrafted dishes.">
+    <meta name="author" content="MN_21">
+    <title>Food Truck Catering</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link href="../css/styles.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+</head>
+
+<body>
+    <!-- Nav Bar -->
+    <header data-bs-theme="">
+        <nav class="navbar navbar-expand-md navbar-custom fixed-top">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="index.html">
+                    <img src="../assets/myotherimages/sff-logo.webp" alt="Street Food Fighter Logo" width="60"
+                        height="30" class="d-inline-block align-text-top">
+                    The Street Food Fighter
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
+                    aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarCollapse">
+                    <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.html">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="menu.html">Menu</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="about.html">About Us</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="catering.html">Catering</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="team.html">Team</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="future.html">Future</a>
+                          </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <!-- Hero -->
+    <main>
+        <!-- Hero section styled like about.html -->
+        <section class="bg-light py-5">
+            <div class="container">
+                <h1 class="display-4 text-center">Our Team</h1>
+                <p class="lead text-center">Meet the passionate people behind our delicious food</p>
+            </div>
+        </section>
+
+        <!-- Container for dynamically loaded content -->
+        <div class="container mt-5">
+            <div class="card mb-5 shadow-sm border-0">
+                <div class="card-body text-center p-4">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <i class="bi bi-mortarboard-fill me-2" style="font-size: 1.5rem; color: #ca3232;"></i>
+                        <h2 id="course-name" class="mb-0">Loading course information...</h2>
+                    </div>
+                    <p id="course-date" class="lead text-muted">Loading date...</p>
+                    <hr class="my-3 w-50 mx-auto">
+                    <p class="mb-0">For our midterm project we created a restaurant webpage for Jeremiah's Uncle's Food Truck</p>
+                </div>
+            </div>
+
+            <div id="team-members-container" class="row">
+                <p class="text-center">Loading team information...</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="container text-center py-4">
+        <p>&copy; 2024 Food Truck. All rights reserved.</p>
+    </footer>
+    <script src="../js/team.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
