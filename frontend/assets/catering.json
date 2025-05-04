@@ -1,0 +1,84 @@
+[
+    {
+        "package_id": 1,
+        "name": "Small Gatherings",
+        "description": "Perfect for small gatherings and office meetings. Includes a selection of our most popular items served buffet-style.",
+        "image": "assets/catering_images/catering1.jpg",
+        "features": [
+            "Selection of appetizers",
+            "Choice of main dishes",
+            "Jasmine rice included",
+            "Disposable plates and utensils",
+            "Ideal for 15-25 guests"
+        ]
+    },
+    {
+        "package_id": 2,
+        "name": "Medium Events",
+        "description": "Ideal for medium-sized events like birthday parties and corporate functions with a wider selection of our signature dishes.",
+        "image": "assets/catering_images/catering2.jpg",
+        "features": [
+            "Expanded appetizer selection",
+            "Multiple main dish options",
+            "Rice and noodle options",
+            "Beverages available",
+            "Perfect for 25-50 guests"
+        ]
+    },
+    {
+        "package_id": 3,
+        "name": "Large Celebrations",
+        "description": "Our most comprehensive package for large events and special celebrations with full-service catering and our complete menu.",
+        "image": "assets/catering_images/catering3.jpg",
+        "features": [
+            "Full appetizer selection",
+            "Complete range of main dishes",
+            "Multiple side options",
+            "Dessert available",
+            "Staff for serving",
+            "Ideal for 50+ guests"
+        ]
+    },
+    {
+        "package_id": 4,
+        "name": "Food Truck Experience",
+        "description": "Bring our entire food truck to your event! Your guests can order directly from our full menu for a unique dining experience.",
+        "image": "assets/catering_images/catering4.jpg",
+        "features": [
+            "Full food truck menu available",
+            "Flexible service window",
+            "Guests order directly from the truck",
+            "Perfect for outdoor events",
+            "Great for festivals and large gatherings",
+            "Custom duration options available"
+        ]
+    },
+    {
+        "package_id": 5,
+        "name": "Corporate Packages",
+        "description": "Designed specifically for office lunches and business meetings with convenient packaging and setup.",
+        "image": "assets/catering_images/catering5.jpg",
+        "features": [
+            "Individually packaged meals available",
+            "Selection of main dishes",
+            "Side options included",
+            "Beverage options",
+            "Delivery and setup",
+            "Flexible for any size business"
+        ]
+    },
+    {
+        "package_id": 6,
+        "name": "Special Occasions",
+        "description": "Make your special day memorable with our customized catering services for weddings, anniversaries, and milestone celebrations.",
+        "image": "assets/catering_images/catering6.jpg",
+        "features": [
+            "Customizable menu options",
+            "Flexible serving styles",
+            "Multiple presentation options",
+            "Professional service available",
+            "Adaptable to venue requirements",
+            "Consultation service included"
+        ]
+    }
+] 
