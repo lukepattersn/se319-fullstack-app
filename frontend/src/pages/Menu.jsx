@@ -56,10 +56,15 @@ const Menu = () => {
 
   return (
     <div className="min-vh-100">
-      <Hero
-        title="Our Menu"
-        subtitle="Fresh, handcrafted dishes made with love."
-      />
+      {/* Hero Section */}
+      <section className="bg-light py-5 mt-5">
+        <div className="container">
+          <h1 className="display-4 text-center">Our Menu</h1>
+          <p className="lead text-center">
+            Fresh, handcrafted dishes made with love.
+          </p>
+        </div>
+      </section>
 
       <Container className="py-5">
         {loading && (

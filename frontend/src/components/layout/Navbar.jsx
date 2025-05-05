@@ -23,10 +23,10 @@ export default function AppNavbar() {
       <Container fluid>
         <Navbar.Brand as={NavLink} to="/" className="d-flex align-items-center">
           <img
-            src="/assets/myotherimages/sff-logo.webp"
+            src="./favicon.ico"
             alt="Street Food Fighter Logo"
-            width="60"
-            height="30"
+            width="40"
+            height="40"
             className="d-inline-block align-text-top me-2"
           />
           The Street Food Fighter
