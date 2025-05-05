@@ -52,21 +52,24 @@ export default function HeroCarousel() {
     <Carousel>
       {slides.map(({ file, title, subtitle, link, buttonText }) => (
         <Carousel.Item key={file}>
-          <img
-            className="d-block w-100"
-            src={`/assets/carousel_images/${file}`}
-            alt={title}
-            style={{ height: '400px', objectFit: 'cover' }}
+          {/* full-width, full-height background */}
+          <div
+            className="w-full h-[60vh] md:h-[80vh] bg-center bg-cover"
+            style={{
+              backgroundImage: `url(/assets/carousel_images/${file})`
+            }}
           />
-          <Carousel.Caption className="bg-dark bg-opacity-50 rounded p-3">
-            <h3>{title}</h3>
-            <p>{subtitle}</p>
-            <Button as={Link} to={link} variant="danger">
+
+          {/* caption overlay */}
+          <Carousel.Caption className="bg-black/50 rounded p-4">
+            <h3 className="text-2xl md:text-4xl font-bold">{title}</h3>
+            {subtitle && <p className="mt-2">{subtitle}</p>}
+            <Button as={Link} to={link} variant="danger" className="mt-3">
               {buttonText}
             </Button>
           </Carousel.Caption>
         </Carousel.Item>
       ))}
     </Carousel>
-  );
+  )
 }
