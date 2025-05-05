@@ -1,9 +1,7 @@
 // src/pages/Menu.jsx
 import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Spinner, Alert } from "react-bootstrap";
-import Navbar from "../components/layout/Navbar";
-import Footer from "../components/layout/Footer";
-import Hero from "../components/sections/Hero";
+import Hero from "../components/sections/HeroCarousel";
 import CategoryFilter from "../components/menu/CategoryFilter";
 import MenuItemGrid from "../components/menu/MenuItemGrid";
 import { useCart } from "../components/cart/CartContext";
@@ -57,8 +55,7 @@ const Menu = () => {
       : menuItems.filter((item) => item.category === activeCategory);
 
   return (
-    <div className="bg-light min-vh-100">
-      <Navbar />
+    <div className="min-vh-100">
       <Hero
         title="Our Menu"
         subtitle="Fresh, handcrafted dishes made with love."
@@ -100,8 +97,6 @@ const Menu = () => {
           </>
         )}
       </Container>
-
-      <Footer />
     </div>
   );
 };
