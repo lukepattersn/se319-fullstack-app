@@ -1,29 +1,48 @@
-// src/App.jsx
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import "bootstrap/dist/css/bootstrap.min.css";
 
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Navbar from './components/layout/Navbar';
-import Footer from './components/layout/Footer';
-import Home     from './pages/Home';
-import Catering from './pages/Catering';
+// Import page components
+import Home from "./pages/Home";
+import About from "./pages/About";
+import Menu from "./pages/Menu";
+import Team from "./pages/Team";
+import Admin from "./pages/Admin";
 
-function App() {
+// Import cart components
+import { CartProvider } from "./components/cart/CartContext";
+import ShoppingCart from "./components/cart/ShoppingCart";
+import CartToggleButton from "./components/cart/CartToggleButton";
+
+const App = () => {
   return (
-    <Router>
-      <Navbar />
-
-      {/* push page content below the navbar (adjust pt-20 if your navbar height changes) */}
-      <div className="pt-20">
+    <CartProvider>
+      <Router>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/catering" element={<Catering />} />
-        </Routes>
-      </div>
+          <Route path="/about" element={<About />} />
+          <Route path="/menu" element={<Menu />} />
+          <Route path="/team" element={<Team />} />
+          <Route path="/admin" element={<Admin />} />
 
-      {/* footer on every page */}
-      <Footer />
-    </Router>
+          {/* Redirect to home for unknown routes */}
+          <Route path="*" element={<Home />} />
+        </Routes>
+
+        {/* Global Cart Components */}
+        <CartWrapper />
+      </Router>
+    </CartProvider>
   );
-}
+};
+
+const CartWrapper = () => {
+  return (
+    <>
+      <ShoppingCart />
+      <CartToggleButton />
+    </>
+  );
+};
 
 export default App;
