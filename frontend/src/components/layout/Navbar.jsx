@@ -1,138 +1,84 @@
-import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+// src/components/layout/Navbar.jsx
+import React from 'react';
+import { NavLink } from 'react-router-dom';
+import { Navbar, Container, Nav } from 'react-bootstrap';
 
-/**
- * Navigation bar component for the restaurant website
- * Uses Tailwind CSS for inline styling
- *
- * @returns {JSX.Element} Rendered Navbar component
- */
-const Navbar = () => {
-  const location = useLocation();
-  const [isNavCollapsed, setIsNavCollapsed] = useState(true);
-
-  // Toggle mobile navigation menu
-  const handleNavCollapse = () => {
-    setIsNavCollapsed(!isNavCollapsed);
-  };
-
-  // Check if the link is active
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
-
+export default function AppNavbar() {
   return (
-    <header>
-      <nav className="bg-red-600 fixed w-full top-0 left-0 z-50 shadow-md">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center">
-            <Link
-              className="flex items-center py-3 text-white font-bold"
+    <Navbar
+      expand="md"
+      fixed="top"
+      variant="dark"
+      className="navbar-custom shadow-sm"
+    >
+      <Container fluid>
+        <Navbar.Brand as={NavLink} to="/" className="d-flex align-items-center">
+          <img
+            src="/assets/myotherimages/sff-logo.webp"
+            alt="Street Food Fighter Logo"
+            width="60"
+            height="30"
+            className="d-inline-block align-text-top me-2"
+          />
+          The Street Food Fighter
+        </Navbar.Brand>
+
+        <Navbar.Toggle aria-controls="main-navbar-nav" />
+        <Navbar.Collapse id="main-navbar-nav">
+          <Nav>
+            <Nav.Link
+              as={NavLink}
               to="/"
+              end
+              className="nav-link"    
             >
-              <img
-                src="/assets/myotherimages/sff-logo.webp"
-                alt="Street Food Fighter Logo"
-                className="w-15 h-8 mr-2"
-              />
-              <span>The Street Food Fighter</span>
-            </Link>
-
-            <button
-              className="md:hidden p-2 text-white focus:outline-none"
-              onClick={handleNavCollapse}
-              aria-expanded={!isNavCollapsed}
-              aria-label="Toggle navigation"
+              Home
+            </Nav.Link>
+            <Nav.Link
+              as={NavLink}
+              to="/menu"
+              className="nav-link"
             >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M4 6h16M4 12h16M4 18h16"
-                ></path>
-              </svg>
-            </button>
-
-            <div
-              className={`${
-                isNavCollapsed ? "hidden" : "block"
-              } w-full md:block md:w-auto`}
+              Menu
+            </Nav.Link>
+            <Nav.Link
+              as={NavLink}
+              to="/about"
+              className="nav-link"
             >
-              <ul className="flex flex-col md:flex-row md:space-x-4 mt-4 md:mt-0 md:text-sm md:font-medium">
-                <li>
-                  <Link
-                    className={`block py-2 px-3 md:p-0 ${
-                      isActive("/")
-                        ? "text-white font-bold"
-                        : "text-white/90 hover:text-white"
-                    }`}
-                    to="/"
-                  >
-                    Home
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    className={`block py-2 px-3 md:p-0 ${
-                      isActive("/menu")
-                        ? "text-white font-bold"
-                        : "text-white/90 hover:text-white"
-                    }`}
-                    to="/menu"
-                  >
-                    Menu
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    className={`block py-2 px-3 md:p-0 ${
-                      isActive("/about")
-                        ? "text-white font-bold"
-                        : "text-white/90 hover:text-white"
-                    }`}
-                    to="/about"
-                  >
-                    About Us
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    className={`block py-2 px-3 md:p-0 ${
-                      isActive("/team")
-                        ? "text-white font-bold"
-                        : "text-white/90 hover:text-white"
-                    }`}
-                    to="/team"
-                  >
-                    Team
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    className={`block py-2 px-3 md:p-0 ${
-                      isActive("/admin")
-                        ? "text-white font-bold"
-                        : "text-white/90 hover:text-white"
-                    }`}
-                    to="/admin"
-                  >
-                    Admin
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </nav>
-    </header>
+              About Us
+            </Nav.Link>
+            <Nav.Link
+              as={NavLink}
+              to="/catering"
+              className="nav-link"
+            >
+              Catering
+            </Nav.Link>
+            <Nav.Link
+              as={NavLink}
+              to="/team"
+              className="nav-link"
+            >
+              Team
+            </Nav.Link>
+            <Nav.Link
+              as={NavLink}
+              to="/future"
+              className="nav-link"
+            >
+              Future
+            </Nav.Link>
+            <Nav.Link
+              as={NavLink}
+              to="/admin"
+              className="nav-link"
+            >
+              Admin
+            </Nav.Link>
+          </Nav>
+        </Navbar.Collapse>
+      </Container>
+    </Navbar>
   );
-};
-
-export default Navbar;
+}
