@@ -1,6 +1,7 @@
 // src/components/cart/ShoppingCart.jsx
 import React from "react";
 import { Card, Button } from "react-bootstrap";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 import CartItem from "./CartItem";
 import { useCart } from "./CartContext";
 
@@ -9,6 +10,7 @@ import { useCart } from "./CartContext";
  * Animates in/out based on showCart state
  */
 const ShoppingCart = () => {
+  const navigate = useNavigate(); // Initialize useNavigate
   const {
     cart,
     showCart,
@@ -23,6 +25,12 @@ const ShoppingCart = () => {
   if (cart.length === 0) {
     return null;
   }
+
+  // Handle checkout button click
+  const handleCheckout = () => {
+    setShowCart(false); // Hide the cart
+    navigate('/checkout'); // Navigate to checkout page
+  };
 
   return (
     <div
@@ -86,7 +94,7 @@ const ShoppingCart = () => {
           <Button
             variant="danger"
             className="w-100"
-            onClick={() => alert("Checkout functionality coming soon!")}
+            onClick={handleCheckout} // Updated to use the new handleCheckout function
           >
             Checkout
           </Button>
