@@ -1,3 +1,40 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.carousel-fixed .carousel-item>div {
+    height: 60vh;
+    background-size: cover !important;
+    background-position: center !important;
+}
+
+.carousel-caption {
+    background: rgba(0, 0, 0, 0.5) !important;
+}
+
+.navbar-custom {
+    background-color: #ca3232;
+}
+
+.navbar-custom .nav-link {
+    color: rgba(0, 0, 0, 0.9);
+    transition: color 0.2s;
+}
+
+.navbar-custom .nav-link:hover {
+    color: #ffffff;
+}
+
+.navbar-custom .nav-link.active,
+.navbar-custom .nav-link[aria-current="page"] {
+    color: #ffffff !important;
+    font-weight: normal !important;
+}
+
+.navbar-custom .navbar-brand {
+    color: #000 !important;
+  }
+
+.hover-card:hover {
+    transform: translateY(-5px);
+  }
