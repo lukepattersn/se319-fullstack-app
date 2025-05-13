@@ -1,10 +1,10 @@
 // src/pages/Menu.jsx
 import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Spinner, Alert } from "react-bootstrap";
-import Hero from "../components/sections/HeroCarousel";
 import CategoryFilter from "../components/menu/CategoryFilter";
 import MenuItemGrid from "../components/menu/MenuItemGrid";
 import { useCart } from "../components/cart/CartContext";
+import { getApiUrl } from "../config";
 
 const Menu = () => {
   // Menu state
@@ -21,21 +21,38 @@ const Menu = () => {
   useEffect(() => {
     const fetchMenuItems = async () => {
       try {
-        const response = await fetch("/assets/data.json");
+        setLoading(true);
+
+        // Add category as a query parameter if it's not "All"
+        const url =
+          activeCategory === "All"
+            ? `${getApiUrl()}/menu`
+            : `${getApiUrl()}/menu?category=${encodeURIComponent(
+                activeCategory
+              )}`;
+
+        const response = await fetch(url);
+
         if (!response.ok) {
           throw new Error(`Failed to fetch menu data: ${response.status}`);
         }
 
         const data = await response.json();
-        const items = data.menu || [];
-        setMenuItems(items);
+        setMenuItems(data.data?.menu || []);
 
-        // Extract unique categories
-        const uniqueCategories = [
-          "All",
-          ...new Set(items.map((item) => item.category)),
-        ];
-        setCategories(uniqueCategories);
+        // If this is the first load, get all categories
+        if (!categories.length) {
+          // Get all categories regardless of current filter
+          const allCategoriesResponse = await fetch(`${getApiUrl()}/menu`);
+          const allCategoriesData = await allCategoriesResponse.json();
+          const allItems = allCategoriesData.data?.menu || [];
+
+          const uniqueCategories = [
+            "All",
+            ...new Set(allItems.map((item) => item.category)),
+          ];
+          setCategories(uniqueCategories);
+        }
 
         setLoading(false);
       } catch (error) {
@@ -46,13 +63,7 @@ const Menu = () => {
     };
 
     fetchMenuItems();
-  }, []);
-
-  // Filter menu items based on active category
-  const filteredItems =
-    activeCategory === "All"
-      ? menuItems
-      : menuItems.filter((item) => item.category === activeCategory);
+  }, [activeCategory, categories.length]);
 
   return (
     <div className="min-vh-100">
@@ -92,9 +103,9 @@ const Menu = () => {
             />
 
             {/* Menu Items Grid */}
-            <MenuItemGrid items={filteredItems} onAddToCart={addToCart} />
+            <MenuItemGrid items={menuItems} onAddToCart={addToCart} />
 
-            {filteredItems.length === 0 && (
+            {menuItems.length === 0 && (
               <Alert variant="info" className="mt-5">
                 No items found in this category.
               </Alert>

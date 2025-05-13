@@ -7,7 +7,14 @@ const { ObjectId } = require('mongodb');
 exports.getMenuItems = async (req, res) => {
   try {
     const db = getDB();
-    const menuItems = await db.collection('menuitems').find({ available: true }).toArray();
+    
+    // Filter by category if provided in query
+    const filter = { available: true };
+    if (req.query.category && req.query.category !== 'All') {
+      filter.category = req.query.category;
+    }
+    
+    const menuItems = await db.collection('menuitems').find(filter).toArray();
     
     // Format for frontend compatibility
     const formattedItems = menuItems.map(item => ({
@@ -17,7 +24,8 @@ exports.getMenuItems = async (req, res) => {
       description: item.description,
       price: item.price,
       category: item.category,
-      image: item.image
+      image: item.image,
+      available: item.available
     }));
 
     res.status(200).json({
@@ -40,7 +48,25 @@ exports.getMenuItems = async (req, res) => {
 exports.getMenuItem = async (req, res) => {
   try {
     const db = getDB();
-    const menuItem = await db.collection('menuitems').findOne({ _id: new ObjectId(req.params.id) });
+    
+    // Check if we're looking up by product_id or ObjectId
+    let query;
+    if (!isNaN(req.params.id)) {
+      // It's a number, use product_id
+      query = { product_id: parseInt(req.params.id) };
+    } else {
+      // Try to use it as an ObjectId
+      try {
+        query = { _id: new ObjectId(req.params.id) };
+      } catch (e) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid ID format'
+        });
+      }
+    }
+    
+    const menuItem = await db.collection('menuitems').findOne(query);
     
     if (!menuItem) {
       return res.status(404).json({
@@ -76,7 +102,7 @@ exports.createMenuItem = async (req, res) => {
     const newItem = {
       ...req.body,
       product_id: nextProductId,
-      available: true,
+      available: req.body.available !== undefined ? req.body.available : true,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -108,24 +134,52 @@ exports.updateMenuItem = async (req, res) => {
       updatedAt: new Date()
     };
     
-    const result = await db.collection('menuitems').findOneAndUpdate(
-      { _id: new ObjectId(req.params.id) },
-      { $set: updatedItem },
-      { returnDocument: 'after' }
-    );
+    let query;
+    if (!isNaN(req.params.id)) {
+      // It's a number, use product_id
+      query = { product_id: parseInt(req.params.id) };
+    } else {
+      // Try to use it as an ObjectId
+      try {
+        query = { _id: new ObjectId(req.params.id) };
+      } catch (e) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid ID format'
+        });
+      }
+    }
     
-    if (!result.value) {
+    console.log("Update query:", query);
+    console.log("Update data:", updatedItem);
+    
+    // Change how we update the document
+    // First, check if the document exists
+    const existingDoc = await db.collection('menuitems').findOne(query);
+    
+    if (!existingDoc) {
       return res.status(404).json({
         success: false,
         message: 'Menu item not found'
       });
     }
+    
+    // Then update it
+    await db.collection('menuitems').updateOne(
+      query,
+      { $set: updatedItem }
+    );
+    
+    // Finally, get the updated document
+    const updatedDoc = await db.collection('menuitems').findOne(query);
 
     res.status(200).json({
       success: true,
-      data: result.value
+      message: 'Menu item updated successfully',
+      data: updatedDoc
     });
   } catch (error) {
+    console.error('Error updating menu item:', error);
     res.status(400).json({
       success: false,
       message: 'Error updating menu item',
@@ -141,7 +195,26 @@ exports.deleteMenuItem = async (req, res) => {
   try {
     const db = getDB();
     
-    const result = await db.collection('menuitems').deleteOne({ _id: new ObjectId(req.params.id) });
+    // Check if we're deleting by product_id or ObjectId
+    let query;
+    if (!isNaN(req.params.id)) {
+      // It's a number, use product_id
+      query = { product_id: parseInt(req.params.id) };
+    } else {
+      // Try to use it as an ObjectId
+      try {
+        query = { _id: new ObjectId(req.params.id) };
+      } catch (e) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid ID format'
+        });
+      }
+    }
+    
+    console.log("Delete query:", query);
+    
+    const result = await db.collection('menuitems').deleteOne(query);
     
     if (result.deletedCount === 0) {
       return res.status(404).json({
@@ -155,6 +228,7 @@ exports.deleteMenuItem = async (req, res) => {
       message: 'Menu item deleted successfully'
     });
   } catch (error) {
+    console.error('Error deleting menu item:', error);
     res.status(400).json({
       success: false,
       message: 'Error deleting menu item',

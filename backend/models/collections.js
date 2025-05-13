@@ -6,7 +6,8 @@ const initializeCollections = async () => {
     
     // Create indexes for better performance
     await db.collection('menuitems').createIndex({ product_id: 1 }, { unique: true });
-    
+    await db.collection('menuitems').createIndex({ category: 1 });
+
     // User collection indexes
     await db.collection('users').createIndex({ username: 1 }, { unique: true });
     await db.collection('users').createIndex({ email: 1 }, { unique: true });
