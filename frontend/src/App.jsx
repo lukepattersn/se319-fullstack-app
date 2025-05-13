@@ -13,7 +13,7 @@ import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import Team from "./pages/Team";
 import Admin from "./pages/Admin";
-import OrderHistory from "./pages/OrderHistory"; // Import the new OrderHistory component
+import OrderHistory from "./pages/OrderHistory"; 
 
 // Import cart components
 import { CartProvider } from "./components/cart/CartContext";

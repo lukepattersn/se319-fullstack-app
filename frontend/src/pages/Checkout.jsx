@@ -3,10 +3,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
 import { useCart } from '../components/cart/CartContext';
+import axios from 'axios';
+import { getApiUrl } from '../config';
 
 const Checkout = () => {
   const { cart, cartTotal, removeFromCart } = useCart();
   const navigate = useNavigate();
+  const API_URL = getApiUrl();
   
   const [step, setStep] = useState('payment');
   const [paymentInfo, setPaymentInfo] = useState({
@@ -49,7 +52,7 @@ const Checkout = () => {
     setPaymentInfo({ ...paymentInfo, cvc: e.target.value.replace(/\D/g, '').slice(0, 3) });
   };
 
-  const handleSubmit = e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const { name, email, address, cardNumber, expiryDate, cvc } = paymentInfo;
 
@@ -59,22 +62,57 @@ const Checkout = () => {
       return;
     }
 
-    // "Process" payment purely in the UI
+    // Process order
     setError('');
     setLoading(true);
 
-    // Simulate a tiny delay so the user sees the spinner
-    setTimeout(() => {
-      // Store user info for summary
-      sessionStorage.setItem(
-        'userInfo',
-        JSON.stringify({ name, email, address })
-      );
-
-      // Clear cart and advance to summary
-      setStep('summary');
+    try {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+      
+      // Prepare order data
+      const orderData = {
+        cartItems: cart,
+        shippingDetails: {
+          name,
+          email,
+          address
+        },
+        paymentDetails: {
+          method: 'Credit Card',
+          cardNumber: cardNumber.replace(/\s/g, ''),
+          expiryDate,
+          cvc
+        },
+        totalAmount: cartTotal
+      };
+      
+      // Send to API
+      const response = await axios.post(`${API_URL}/checkout`, orderData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data.success) {
+        // Store user info for summary
+        sessionStorage.setItem(
+          'userInfo',
+          JSON.stringify({ name, email, address })
+        );
+        
+        // Clear cart and advance to summary
+        setStep('summary');
+      } else {
+        throw new Error(response.data.message || 'Failed to process checkout');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      setError('Failed to process your order. Please try again.');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   const handleContinueShopping = () => {

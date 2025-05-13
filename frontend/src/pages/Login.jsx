@@ -6,7 +6,7 @@ import { useAuth } from '../components/auth/AuthContext';
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    username: '',
+    username: '', // Changed from email to username to match backend expectations
     password: ''
   });
   const [loading, setLoading] = useState(false);
@@ -91,6 +91,7 @@ const Login = () => {
                     variant="danger" 
                     type="submit"
                     disabled={loading}
+                    className="py-2" // Added to match Register button styling
                   >
                     {loading ? 'Logging in...' : 'Login'}
                   </Button>

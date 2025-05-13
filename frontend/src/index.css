@@ -33,8 +33,47 @@
 
 .navbar-custom .navbar-brand {
     color: #000 !important;
-  }
+}
 
 .hover-card:hover {
     transform: translateY(-5px);
-  }
+}
+
+.dropdown-item.active,
+.dropdown-item:active {
+    background-color: #ca3232 !important;
+    color: white !important;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(202, 50, 50, 0.1) !important;
+    color: #ca3232 !important;
+}
+
+.btn:focus,
+.btn.focus,
+.btn-primary:focus,
+.btn-primary.focus {
+    box-shadow: 0 0 0 0.2rem rgba(202, 50, 50, 0.25) !important;
+}
+
+.form-control:focus,
+.btn:focus,
+.page-link:focus,
+.nav-link:focus {
+    border-color: #ca3232 !important;
+    box-shadow: 0 0 0 0.2rem rgba(202, 50, 50, 0.25) !important;
+}
+
+a {
+    color: #ca3232;
+}
+
+a:hover {
+    color: #b02020;
+}
+
+.page-item.active .page-link {
+    background-color: #ca3232 !important;
+    border-color: #ca3232 !important;
+}
