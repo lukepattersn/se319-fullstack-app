@@ -27,6 +27,7 @@ const startServer = async () => {
 
     // Routes - register after database is connected
     app.use('/api/menu', require('./api/routes/menu'));
+    app.use('/api/admin', require('./api/routes/admin'));
     app.use('/api/static', require('./api/routes/static'));
     
     // New routes for authentication, orders, and checkout

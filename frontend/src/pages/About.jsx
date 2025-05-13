@@ -1,5 +1,6 @@
 // src/pages/About.jsx
 import React, { useState, useEffect } from "react";
+import { getApiUrl } from "../config";
 
 const About = () => {
   const [aboutCards, setAboutCards] = useState([]);
@@ -7,10 +8,10 @@ const About = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch about data
+    // Fetch about data from API
     const fetchData = async () => {
       try {
-        const response = await fetch("/assets/about.json");
+        const response = await fetch(`${getApiUrl()}/static/about`);
         if (!response.ok) {
           throw new Error(`Failed to fetch about data: ${response.status}`);
         }

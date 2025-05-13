@@ -1,110 +1,62 @@
 const { MongoClient } = require('mongodb');
-const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
-const menuData = [
-  {
-    product_id: 1,
-    product_name: "3 Pack Egg Rolls",
-    description: "Mom's secret recipe! No need to explain!",
-    image: "/assets/menu_images/eggrolls.jpg",
-    category: "Side",
-    price: 6.00,
-    available: true,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    product_id: 2,
-    product_name: "3 Pack Crabmeat Rangoons",
-    description: "Cream cheese, imitation crab meat, onions, carrots, & our special seasonings served with sweet chili sauce.",
-    image: "/assets/menu_images/crabmeat-rangoon.jpg",
-    category: "Side",
-    price: 6.00,
-    available: true,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    product_id: 3,
-    product_name: "3 Street Tacos",
-    description: "Sirloin steak marinated in our special Asian flavors, grilled & served in white corn tortillas, onions, cilantro & lime.",
-    image: "/assets/menu_images/street-tacos.jpg",
-    category: "Entree",
-    price: 9.00,
-    available: true,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    product_id: 4,
-    product_name: "Sweet & Spicy Chicken",
-    description: "Seasoned & breaded chicken, fried & wok stir fried in our House-made sweet & spicy sauce, bell peppers, onions, pineapple, sesame seeds & green onions. Served with jasmine rice.",
-    image: "/assets/menu_images/sweet-and-spicy.jpg",
-    category: "Entree",
-    price: 13.00,
-    available: true,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    product_id: 5,
-    product_name: "Chicken Fried Rice",
-    description: "Cooked to order & always fresh!",
-    image: "/assets/menu_images/chicken-fried-rice.jpg",
-    category: "Entree",
-    price: 8.00,
-    available: true,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    product_id: 6,
-    product_name: "Chicken NUGZ",
-    description: "Hand breaded & deep fried chicken NUGZ (nuggets). Served with sweet chili sauce.",
-    image: "/assets/menu_images/chicken-nugz.jpg",
-    category: "Entree",
-    price: 12.00,
-    available: true,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    product_id: 7,
-    product_name: "Khao Man Gai",
-    description: "Thai chicken rice, grilled chicken thighs served on a bed of jasmine rice, cucumbers, cilantro & our special sauce.",
-    image: "/assets/menu_images/khao-man-gai.jpg",
-    category: "Entree",
-    price: 12.00,
-    available: true,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    product_id: 8,
-    product_name: "Mongolian Beef Philly Cheesesteak",
-    description: "Grilled sirloin steak, provolone cheese, green onions & cilantro.",
-    image: "/assets/menu_images/mongolian-steak.jpg",
-    category: "Entree",
-    price: 12.00,
-    available: true,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    product_id: 9,
-    product_name: "Side Fried Rice",
-    description: "Side fried rice, no chicken.",
-    image: "/assets/menu_images/fried-rice.jpg",
-    category: "Side",
-    price: 4.00,
-    available: true,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }
-];
+const aboutData = {
+  cards: [
+    {
+      title: "Supporting Our Troops",
+      image: "/assets/about/army.jpg",
+      alt: "Donating Lunch to Soldiers",
+      description: "We love giving back to our community by supporting our troops."
+    },
+    {
+      title: "Events & Festivals",
+      image: "/assets/about/event.jpg",
+      alt: "Food Truck at an Event",
+      description: "Catch us at local festivals, parties, and diverse events around Cedar Rapids."
+    },
+    {
+      title: "Inside the Truck",
+      image: "/assets/about/inside_truck.jpg",
+      alt: "Inside the Food Truck",
+      description: "Experience our mobile kitchen where every dish is made fresh on the spot."
+    },
+    {
+      title: "Our Community",
+      image: "/assets/about/people.jpg",
+      alt: "Our Community",
+      description: "Our customers and team are like family. We cherish every moment shared."
+    },
+    {
+      title: "Food is Love",
+      image: "/assets/about/rangoons.jpg",
+      alt: "Delicious Food",
+      description: "Our food is a celebration of flavor and heart. Every dish we create is crafted with pride, passion, and a belief that good food brings people together."
+    },
+    {
+      title: "On the Move",
+      image: "/assets/about/truck.jpg",
+      alt: "The Street Food Fighter Truck",
+      description: "Our truck is always on the move, bringing fresh flavors to the streets of Cedar Rapids."
+    }
+  ],
+  testimonials: [
+    {
+      review: "BEST CRAB RANGOONS in town! Run don't walk. Great food!",
+      author: "Vicki"
+    },
+    {
+      review: "Everything about this truck is wonderful. Fresh and delicious, a must-try in Cedar Rapids!",
+      author: "Nicole"
+    },
+    {
+      review: "Ope is the best and the crab rangoons are 10/10! The Street Food Fighter never disappoints.",
+      author: "Barbara"
+    }
+  ]
+};
 
-const seedDatabase = async () => {
+const seedAboutData = async () => {
   const client = new MongoClient(process.env.MONGODB_URI);
   
   try {
@@ -113,36 +65,36 @@ const seedDatabase = async () => {
     
     console.log('Connected to database');
 
-    // Clear existing data
-    await db.collection('menuitems').deleteMany({});
-    console.log('Cleared menu items');
-
-    // Insert menu data
-    await db.collection('menuitems').insertMany(menuData);
-    console.log('Menu items seeded successfully');
-
-    // Create admin user if doesn't exist
-    const adminExists = await db.collection('users').findOne({ username: 'admin' });
-    if (!adminExists) {
-      const hashedPassword = await bcrypt.hash('password', 10);
-      await db.collection('users').insertOne({
-        username: 'admin',
-        email: 'admin@streetfoodfighter.com',
-        password: hashedPassword,
-        role: 'admin',
+    // Check if about data already exists
+    const existingData = await db.collection('about').findOne({});
+    
+    if (existingData) {
+      console.log('About data already exists, updating...');
+      await db.collection('about').updateOne(
+        { _id: existingData._id },
+        { 
+          $set: {
+            ...aboutData,
+            updatedAt: new Date()
+          } 
+        }
+      );
+    } else {
+      console.log('Creating new about data...');
+      await db.collection('about').insertOne({
+        ...aboutData,
         createdAt: new Date(),
         updatedAt: new Date()
       });
-      console.log('Admin user created');
     }
 
-    console.log('Database seeded successfully');
+    console.log('About data seeded successfully');
   } catch (error) {
-    console.error('Error seeding database:', error);
+    console.error('Error seeding about data:', error);
   } finally {
     await client.close();
     process.exit(0);
   }
 };
 
-seedDatabase();
+seedAboutData();

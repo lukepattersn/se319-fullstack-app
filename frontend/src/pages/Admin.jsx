@@ -1,5 +1,6 @@
-// src/pages/Admin.jsx
 import React, { useState, useEffect } from "react";
+import { getApiUrl } from "../config";
+import axios from "axios";
 import {
   Container,
   Row,
@@ -9,14 +10,18 @@ import {
   Button,
   Spinner,
   Alert,
+  Form,
+  InputGroup,
+  Table,
+  Dropdown,
+  Modal,
 } from "react-bootstrap";
-
-import FormInput from "../components/common/FormInput";
+import { useAuth } from "../components/auth/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Admin = () => {
-  // Authentication state
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loginError, setLoginError] = useState("");
+  const { currentUser, login, logout } = useAuth();
+  const navigate = useNavigate();
 
   // Login form state
   const [loginForm, setLoginForm] = useState({
@@ -25,14 +30,21 @@ const Admin = () => {
   });
 
   // Admin data states
-  const [activeTab, setActiveTab] = useState("menu");
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterCategory, setFilterCategory] = useState("All");
+  const [categories, setCategories] = useState(["All"]);
 
   // Selected item for edit/delete
   const [selectedItem, setSelectedItem] = useState(null);
+
+  // Delete confirmation modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   // New/edit item form
   const [itemForm, setItemForm] = useState({
@@ -42,20 +54,32 @@ const Admin = () => {
     price: "",
     category: "",
     image: "",
+    available: true,
   });
 
-  // Mock login for demonstration
-  const handleLogin = (e) => {
-    e.preventDefault();
-    // For demo purposes only - in real app would validate against server
-    if (loginForm.username === "admin" && loginForm.password === "password") {
-      setIsAuthenticated(true);
-      setLoginError("");
+  // Check if user is admin on mount
+  useEffect(() => {
+    const checkAdmin = () => {
+      if (currentUser && currentUser.role === "admin") {
+        fetchMenuItems();
+      }
+    };
 
-      // Fetch menu items after successful login
-      fetchMenuItems();
-    } else {
-      setLoginError("Invalid username or password");
+    checkAdmin();
+  }, [currentUser]);
+
+  // Handle login with real authentication
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    try {
+      await login(loginForm.username, loginForm.password);
+      // After login, the currentUser will be updated and the useEffect above will run
+    } catch (error) {
+      console.error("Login error:", error);
+      setErrorMessage("Login failed. Please check your credentials.");
+    } finally {
+      setLoginLoading(false);
     }
   };
 
@@ -63,13 +87,25 @@ const Admin = () => {
   const fetchMenuItems = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/assets/data.json");
-      if (!response.ok) {
-        throw new Error(`Failed to fetch menu data: ${response.status}`);
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        throw new Error("Not authenticated");
       }
 
-      const data = await response.json();
-      setMenuItems(data.menu || []);
+      const response = await axios.get(`${getApiUrl()}/menu`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const items = response.data.data.menu || [];
+      setMenuItems(items);
+
+      // Extract unique categories
+      const uniqueCategories = [
+        "All",
+        ...new Set(items.map((item) => item.category)),
+      ];
+      setCategories(uniqueCategories);
     } catch (error) {
       console.error("Error fetching menu items:", error);
       setErrorMessage("Failed to load menu items. Please try again.");
@@ -89,10 +125,10 @@ const Admin = () => {
 
   // Handle item form changes
   const handleItemFormChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setItemForm({
       ...itemForm,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     });
   };
 
@@ -105,6 +141,7 @@ const Admin = () => {
       price: "",
       category: "",
       image: "",
+      available: true,
     });
     setSelectedItem(null);
   };
@@ -118,6 +155,7 @@ const Admin = () => {
       price: item.price.toString(),
       category: item.category,
       image: item.image,
+      available: item.available !== false,
     });
     setSelectedItem(item);
 
@@ -125,21 +163,51 @@ const Admin = () => {
     document.getElementById("item-form").scrollIntoView({ behavior: "smooth" });
   };
 
-  // Delete an item (mock function)
-  const handleDeleteItem = (itemId) => {
-    // In a real app, this would call an API
-    setMenuItems(menuItems.filter((item) => item.product_id !== itemId));
-    setSuccessMessage("Item deleted successfully");
-    setTimeout(() => setSuccessMessage(""), 3000);
+  // Confirm delete
+  const confirmDelete = (item) => {
+    setItemToDelete(item);
+    setShowDeleteModal(true);
+  };
 
-    // Reset form if the deleted item was selected
-    if (selectedItem && selectedItem.product_id === itemId) {
-      resetItemForm();
+  // Delete an item
+  const handleDeleteItem = async () => {
+    if (!itemToDelete) return;
+
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        throw new Error("Not authenticated");
+      }
+
+      await axios.delete(`${getApiUrl()}/menu/${itemToDelete.product_id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setSuccessMessage("Item deleted successfully");
+      setShowDeleteModal(false);
+
+      // Refresh menu items
+      fetchMenuItems();
+
+      // Reset form if the deleted item was selected
+      if (selectedItem && selectedItem.product_id === itemToDelete.product_id) {
+        resetItemForm();
+      }
+
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      setErrorMessage(
+        "Failed to delete menu item. " +
+          (error.response?.data?.message || "Please try again.")
+      );
+      setShowDeleteModal(false);
     }
   };
 
   // Save item (create or update)
-  const handleSaveItem = (e) => {
+  const handleSaveItem = async (e) => {
     e.preventDefault();
 
     // Validate form
@@ -148,38 +216,65 @@ const Admin = () => {
       return;
     }
 
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setErrorMessage("You must be logged in to perform this action");
+      return;
+    }
+
     const updatedItem = {
-      product_id: itemForm.product_id || Math.floor(Math.random() * 1000) + 10, // Generate ID if new item
       product_name: itemForm.product_name,
       description: itemForm.description,
       price: parseFloat(itemForm.price),
       category: itemForm.category,
       image: itemForm.image || "/assets/menu_images/default-food.jpg",
+      available: itemForm.available,
     };
 
-    if (selectedItem) {
-      // Update existing item
-      setMenuItems(
-        menuItems.map((item) =>
-          item.product_id === updatedItem.product_id ? updatedItem : item
-        )
-      );
-      setSuccessMessage("Item updated successfully");
-    } else {
-      // Add new item
-      setMenuItems([...menuItems, updatedItem]);
-      setSuccessMessage("Item added successfully");
-    }
+    try {
+      if (selectedItem) {
+        // Update existing item
+        await axios.put(
+          `${getApiUrl()}/menu/${selectedItem.product_id}`,
+          updatedItem,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setSuccessMessage("Item updated successfully");
+      } else {
+        // Add new item
+        await axios.post(`${getApiUrl()}/menu`, updatedItem, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setSuccessMessage("Item added successfully");
+      }
 
-    resetItemForm();
-    setTimeout(() => setSuccessMessage(""), 3000);
+      // Refresh menu items
+      fetchMenuItems();
+      resetItemForm();
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (error) {
+      console.error("Error saving item:", error);
+      setErrorMessage(
+        "Failed to save menu item. " +
+          (error.response?.data?.message || "Please try again.")
+      );
+    }
   };
 
   // Handle logout
   const handleLogout = () => {
-    setIsAuthenticated(false);
-    resetItemForm();
+    logout();
+    navigate("/login");
   };
+
+  // Filter menu items
+  const filteredItems = menuItems.filter(
+    (item) =>
+      (filterCategory === "All" || item.category === filterCategory) &&
+      (searchTerm === "" ||
+        item.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.description.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   return (
     <div className="min-vh-100 d-flex flex-column">
@@ -194,49 +289,76 @@ const Admin = () => {
 
         <Container className="py-4">
           {/* Login Form */}
-          {!isAuthenticated ? (
+          {!currentUser || currentUser.role !== "admin" ? (
             <Row className="justify-content-center">
               <Col md={6} lg={5}>
-                <Card className="shadow-sm border-0">
+                <Card className="shadow border-0">
+                  <Card.Header className="bg-danger text-white">
+                    <h3 className="mb-0">Admin Login</h3>
+                  </Card.Header>
                   <Card.Body className="p-4">
-                    <h2 className="text-center mb-4">Admin Login</h2>
+                    {errorMessage && (
+                      <Alert
+                        variant="danger"
+                        onClose={() => setErrorMessage("")}
+                        dismissible
+                      >
+                        {errorMessage}
+                      </Alert>
+                    )}
 
-                    {loginError && <Alert variant="danger">{loginError}</Alert>}
+                    <Form onSubmit={handleLogin}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Username</Form.Label>
+                        <Form.Control
+                          type="text"
+                          name="username"
+                          value={loginForm.username}
+                          onChange={handleLoginChange}
+                          placeholder="Enter admin username"
+                          required
+                        />
+                      </Form.Group>
 
-                    <form onSubmit={handleLogin}>
-                      <FormInput
-                        id="username"
-                        name="username"
-                        label="Username"
-                        placeholder="Enter admin username"
-                        value={loginForm.username}
-                        onChange={handleLoginChange}
-                        required
-                      />
-
-                      <FormInput
-                        id="password"
-                        name="password"
-                        type="password"
-                        label="Password"
-                        placeholder="Enter password"
-                        value={loginForm.password}
-                        onChange={handleLoginChange}
-                        required
-                      />
+                      <Form.Group className="mb-4">
+                        <Form.Label>Password</Form.Label>
+                        <Form.Control
+                          type="password"
+                          name="password"
+                          value={loginForm.password}
+                          onChange={handleLoginChange}
+                          placeholder="Enter password"
+                          required
+                        />
+                      </Form.Group>
 
                       <Button
                         type="submit"
                         variant="danger"
                         className="w-100 mt-3"
+                        disabled={loginLoading}
                       >
-                        Login
+                        {loginLoading ? (
+                          <>
+                            <Spinner
+                              as="span"
+                              animation="border"
+                              size="sm"
+                              role="status"
+                              aria-hidden="true"
+                              className="me-2"
+                            />
+                            Logging in...
+                          </>
+                        ) : (
+                          "Login"
+                        )}
                       </Button>
 
                       <p className="text-muted small text-center mt-3">
-                        Demo credentials: username "admin" / password "password"
+                        Note: You need admin privileges to access this area
                       </p>
-                    </form>
+                    </Form>
                   </Card.Body>
                 </Card>
               </Col>
@@ -246,62 +368,55 @@ const Admin = () => {
             <>
               {/* Success/Error Messages */}
               {successMessage && (
-                <Alert variant="success">{successMessage}</Alert>
+                <Alert
+                  variant="success"
+                  onClose={() => setSuccessMessage("")}
+                  dismissible
+                  className="shadow-sm"
+                >
+                  <div className="d-flex align-items-center">
+                    <i className="bi bi-check-circle-fill me-2"></i>
+                    {successMessage}
+                  </div>
+                </Alert>
               )}
 
-              {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
+              {errorMessage && (
+                <Alert
+                  variant="danger"
+                  onClose={() => setErrorMessage("")}
+                  dismissible
+                  className="shadow-sm"
+                >
+                  <div className="d-flex align-items-center">
+                    <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                    {errorMessage}
+                  </div>
+                </Alert>
+              )}
 
-              {/* Navigation Tabs */}
-              <ul className="nav nav-tabs mb-4">
-                <li className="nav-item">
-                  <Button
-                    variant={
-                      activeTab === "menu" ? "danger" : "outline-secondary"
-                    }
-                    className="nav-link"
-                    onClick={() => setActiveTab("menu")}
-                  >
-                    Menu Items
-                  </Button>
-                </li>
-                <li className="nav-item">
-                  <Button
-                    variant={
-                      activeTab === "orders" ? "danger" : "outline-secondary"
-                    }
-                    className="nav-link"
-                    onClick={() => setActiveTab("orders")}
-                  >
-                    Orders
-                  </Button>
-                </li>
-                <li className="nav-item">
-                  <Button
-                    variant={
-                      activeTab === "settings" ? "danger" : "outline-secondary"
-                    }
-                    className="nav-link"
-                    onClick={() => setActiveTab("settings")}
-                  >
-                    Settings
-                  </Button>
-                </li>
-                <li className="nav-item ms-auto">
-                  <Button variant="outline-danger" onClick={handleLogout}>
-                    Logout
-                  </Button>
-                </li>
-              </ul>
+              {/* Admin Dashboard Interface */}
+              <Card className="shadow border-0 mb-4">
+                <Card.Header className="bg-danger text-white">
+                  <div className="d-flex justify-content-between align-items-center">
+                    <h4 className="mb-0">Welcome, {currentUser.username}</h4>
+                    <Button variant="outline-light" onClick={handleLogout}>
+                      <i className="bi bi-box-arrow-right me-2"></i>
+                      Logout
+                    </Button>
+                  </div>
+                </Card.Header>
+              </Card>
 
-              {/* Content based on active tab */}
-              {activeTab === "menu" && (
-                <div>
+              <Card className="shadow-sm border-0">
+                <Card.Body>
                   <div className="d-flex justify-content-between align-items-center mb-4">
                     <h2>Menu Management</h2>
                     <Button
-                      variant="danger"
+                      variant="success"
+                      size="lg"
                       onClick={resetItemForm}
-                      className="d-flex align-items-center"
+                      className="d-flex align-items-center px-4 py-2"
                     >
                       <i className="bi bi-plus-circle me-2"></i>
                       Add New Item
@@ -309,199 +424,311 @@ const Admin = () => {
                   </div>
 
                   {/* Item Form */}
-                  <Card id="item-form" className="shadow-sm border-0 mb-5">
-                    <Card.Body className="p-4">
-                      <h3 className="mb-3">
+                  <Card id="item-form" className="shadow border-0 mb-5">
+                    <Card.Header className="bg-primary text-white">
+                      <h3 className="mb-0">
                         {selectedItem ? "Edit Menu Item" : "Add New Menu Item"}
                       </h3>
-
-                      <form onSubmit={handleSaveItem}>
+                    </Card.Header>
+                    <Card.Body className="p-4">
+                      <Form onSubmit={handleSaveItem}>
                         <Row>
                           <Col md={6}>
-                            <FormInput
-                              id="product_name"
-                              name="product_name"
-                              label="Product Name"
-                              placeholder="Enter product name"
-                              value={itemForm.product_name}
-                              onChange={handleItemFormChange}
-                              required
-                            />
+                            <Form.Group className="mb-3">
+                              <Form.Label>Product Name*</Form.Label>
+                              <Form.Control
+                                type="text"
+                                name="product_name"
+                                value={itemForm.product_name}
+                                onChange={handleItemFormChange}
+                                required
+                                placeholder="Enter product name"
+                              />
+                            </Form.Group>
                           </Col>
 
                           <Col md={6}>
-                            <FormInput
-                              id="category"
-                              name="category"
-                              label="Category"
-                              placeholder="E.g. Entree, Side, Dessert"
-                              value={itemForm.category}
-                              onChange={handleItemFormChange}
-                              required
-                            />
+                            <Form.Group className="mb-3">
+                              <Form.Label>Category*</Form.Label>
+                              <Form.Control
+                                type="text"
+                                name="category"
+                                value={itemForm.category}
+                                onChange={handleItemFormChange}
+                                required
+                                placeholder="E.g. Entree, Side, Dessert"
+                                list="categoryOptions"
+                              />
+                              <datalist id="categoryOptions">
+                                {categories
+                                  .filter((cat) => cat !== "All")
+                                  .map((cat) => (
+                                    <option key={cat} value={cat} />
+                                  ))}
+                              </datalist>
+                            </Form.Group>
                           </Col>
 
                           <Col md={6}>
-                            <FormInput
-                              id="price"
-                              name="price"
-                              type="number"
-                              label="Price"
-                              placeholder="Enter price"
-                              value={itemForm.price}
-                              onChange={handleItemFormChange}
-                              required
-                              step="0.01"
-                              min="0"
-                            />
+                            <Form.Group className="mb-3">
+                              <Form.Label>Price* ($)</Form.Label>
+                              <Form.Control
+                                type="number"
+                                name="price"
+                                value={itemForm.price}
+                                onChange={handleItemFormChange}
+                                required
+                                step="0.01"
+                                min="0"
+                                placeholder="Enter price"
+                              />
+                            </Form.Group>
                           </Col>
 
                           <Col md={6}>
-                            <FormInput
-                              id="image"
-                              name="image"
-                              label="Image Path"
-                              placeholder="E.g. assets/menu_images/item.jpg"
-                              value={itemForm.image}
-                              onChange={handleItemFormChange}
-                            />
+                            <Form.Group className="mb-3">
+                              <Form.Label>Image Path</Form.Label>
+                              <Form.Control
+                                type="text"
+                                name="image"
+                                value={itemForm.image}
+                                onChange={handleItemFormChange}
+                                placeholder="E.g. /assets/menu_images/item.jpg"
+                              />
+                            </Form.Group>
                           </Col>
 
                           <Col md={12}>
-                            <div className="mb-3">
-                              <label
-                                htmlFor="description"
-                                className="form-label"
-                              >
-                                Description
-                              </label>
-                              <textarea
-                                id="description"
+                            <Form.Group className="mb-3">
+                              <Form.Label>Description</Form.Label>
+                              <Form.Control
+                                as="textarea"
                                 name="description"
-                                className="form-control"
-                                rows="3"
-                                placeholder="Enter product description"
                                 value={itemForm.description}
                                 onChange={handleItemFormChange}
+                                rows="3"
+                                placeholder="Enter product description"
                               />
-                            </div>
+                            </Form.Group>
+                          </Col>
+
+                          <Col md={12}>
+                            <Form.Group className="mb-3">
+                              <Form.Check
+                                type="checkbox"
+                                name="available"
+                                label="Item is Available"
+                                checked={itemForm.available}
+                                onChange={handleItemFormChange}
+                              />
+                            </Form.Group>
                           </Col>
                         </Row>
 
                         <div className="d-flex justify-content-end gap-2 mt-3">
                           <Button
                             type="button"
-                            variant="outline-secondary"
+                            variant="secondary"
+                            size="lg"
                             onClick={resetItemForm}
+                            className="px-4"
                           >
                             Cancel
                           </Button>
-                          <Button type="submit" variant="danger">
+                          <Button
+                            type="submit"
+                            variant="primary"
+                            size="lg"
+                            className="px-4"
+                          >
                             {selectedItem ? "Update Item" : "Add Item"}
                           </Button>
                         </div>
-                      </form>
+                      </Form>
                     </Card.Body>
                   </Card>
 
-                  {/* Menu Items Grid */}
+                  {/* Search and Filter */}
+                  <Row className="mb-4">
+                    <Col md={6}>
+                      <InputGroup>
+                        <InputGroup.Text>
+                          <i className="bi bi-search"></i>
+                        </InputGroup.Text>
+                        <Form.Control
+                          placeholder="Search menu items..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </InputGroup>
+                    </Col>
+                    <Col md={6}>
+                      <Dropdown>
+                        <Dropdown.Toggle
+                          variant="outline-secondary"
+                          className="w-100"
+                        >
+                          Filter by Category: {filterCategory}
+                        </Dropdown.Toggle>
+                        <Dropdown.Menu>
+                          {categories.map((category) => (
+                            <Dropdown.Item
+                              key={category}
+                              onClick={() => setFilterCategory(category)}
+                              active={filterCategory === category}
+                            >
+                              {category}
+                            </Dropdown.Item>
+                          ))}
+                        </Dropdown.Menu>
+                      </Dropdown>
+                    </Col>
+                  </Row>
+
+                  {/* Menu Items List */}
                   {loading ? (
                     <div className="text-center py-5">
                       <Spinner animation="border" variant="danger" />
                       <p className="mt-3 text-muted">Loading menu items...</p>
                     </div>
                   ) : (
-                    <Row xs={1} md={2} lg={3} className="g-4">
-                      {menuItems.map((item) => (
-                        <Col key={item.product_id}>
-                          <Card className="h-100 shadow-sm">
-                            <Card.Img
-                              variant="top"
-                              src={item.image}
-                              alt={item.product_name}
-                              style={{ height: "200px", objectFit: "cover" }}
-                            />
-                            <Card.Body className="d-flex flex-column">
-                              <div className="d-flex justify-content-between align-items-start mb-3">
-                                <Card.Title className="mb-0">
-                                  {item.product_name}
-                                </Card.Title>
-                                <Badge bg="danger" pill>
+                    <>
+                      {filteredItems.length === 0 ? (
+                        <Alert variant="info" className="text-center">
+                          No menu items found.{" "}
+                          {searchTerm || filterCategory !== "All"
+                            ? "Try changing your search or filter."
+                            : "Add your first item!"}
+                        </Alert>
+                      ) : (
+                        <Table
+                          responsive
+                          hover
+                          className="shadow-sm table-striped"
+                        >
+                          <thead className="table-dark">
+                            <tr>
+                              <th style={{ width: "80px" }}>Image</th>
+                              <th>Name</th>
+                              <th>Category</th>
+                              <th>Price</th>
+                              <th>Status</th>
+                              <th style={{ width: "250px" }}>Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredItems.map((item) => (
+                              <tr key={item.product_id}>
+                                <td>
+                                  <img
+                                    src={item.image}
+                                    alt={item.product_name}
+                                    className="img-thumbnail"
+                                    style={{
+                                      width: "80px",
+                                      height: "80px",
+                                      objectFit: "cover",
+                                    }}
+                                  />
+                                </td>
+                                <td>
+                                  <strong className="fs-5">
+                                    {item.product_name}
+                                  </strong>
+                                  <div
+                                    className="small text-muted text-truncate"
+                                    style={{ maxWidth: "250px" }}
+                                  >
+                                    {item.description}
+                                  </div>
+                                </td>
+                                <td>
+                                  <Badge
+                                    bg="light"
+                                    text="dark"
+                                    className="fs-6 px-3 py-2"
+                                  >
+                                    {item.category}
+                                  </Badge>
+                                </td>
+                                <td className="fs-5">
                                   ${item.price.toFixed(2)}
-                                </Badge>
-                              </div>
-                              <Card.Text className="text-muted small flex-grow-1">
-                                {item.description}
-                              </Card.Text>
-                              <div className="d-flex justify-content-between align-items-center">
-                                <Badge bg="light" text="dark" pill>
-                                  {item.category}
-                                </Badge>
-                                <div>
-                                  <Button
-                                    variant="outline-primary"
-                                    size="sm"
-                                    className="me-2"
-                                    onClick={() => handleEditItem(item)}
-                                  >
-                                    Edit
-                                  </Button>
-                                  <Button
-                                    variant="outline-danger"
-                                    size="sm"
-                                    onClick={() =>
-                                      handleDeleteItem(item.product_id)
-                                    }
-                                  >
-                                    Delete
-                                  </Button>
-                                </div>
-                              </div>
-                            </Card.Body>
-                          </Card>
-                        </Col>
-                      ))}
-
-                      {menuItems.length === 0 && (
-                        <Col xs={12}>
-                          <Alert variant="info" className="text-center">
-                            No menu items found. Add your first item!
-                          </Alert>
-                        </Col>
+                                </td>
+                                <td>
+                                  {item.available !== false ? (
+                                    <Badge
+                                      bg="success"
+                                      className="px-3 py-2 fs-6"
+                                    >
+                                      Available
+                                    </Badge>
+                                  ) : (
+                                    <Badge
+                                      bg="secondary"
+                                      className="px-3 py-2 fs-6"
+                                    >
+                                      Unavailable
+                                    </Badge>
+                                  )}
+                                </td>
+                                <td>
+                                  <div className="d-flex">
+                                    <Button
+                                      variant="primary"
+                                      className="me-2 px-3 py-2"
+                                      onClick={() => handleEditItem(item)}
+                                    >
+                                      <i className="bi bi-pencil me-2"></i>
+                                      Edit
+                                    </Button>
+                                    <Button
+                                      variant="danger"
+                                      className="px-3 py-2"
+                                      onClick={() => confirmDelete(item)}
+                                    >
+                                      <i className="bi bi-trash me-2"></i>
+                                      Delete
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
                       )}
-                    </Row>
+                    </>
                   )}
-                </div>
-              )}
-
-              {activeTab === "orders" && (
-                <Card className="shadow-sm border-0">
-                  <Card.Body className="p-4">
-                    <h2 className="mb-3">Orders</h2>
-                    <Alert variant="info">
-                      Order management functionality coming soon. This section
-                      will allow you to view and manage customer orders.
-                    </Alert>
-                  </Card.Body>
-                </Card>
-              )}
-
-              {activeTab === "settings" && (
-                <Card className="shadow-sm border-0">
-                  <Card.Body className="p-4">
-                    <h2 className="mb-3">Settings</h2>
-                    <Alert variant="info">
-                      Settings functionality coming soon. This section will
-                      allow you to configure your restaurant's information,
-                      opening hours, and other settings.
-                    </Alert>
-                  </Card.Body>
-                </Card>
-              )}
+                </Card.Body>
+              </Card>
             </>
           )}
         </Container>
       </main>
+
+      {/* Delete Confirmation Modal */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirm Deletion</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Are you sure you want to delete the menu item:
+          <strong className="d-block mt-2">{itemToDelete?.product_name}</strong>
+          <span className="text-muted small">
+            This action cannot be undone.
+          </span>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="outline-secondary"
+            onClick={() => setShowDeleteModal(false)}
+          >
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleDeleteItem}>
+            Delete Item
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
