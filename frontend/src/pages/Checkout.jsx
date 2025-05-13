@@ -1,14 +1,19 @@
 // src/pages/Checkout.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
 import { useCart } from '../components/cart/CartContext';
+import axios from 'axios';
+
+// API base URL
+const API_URL = 'http://localhost:3001/api';
 
 const Checkout = () => {
   const { cart, cartTotal, removeFromCart } = useCart();
   const navigate = useNavigate();
   
   const [step, setStep] = useState('payment');
+  const [orderId, setOrderId] = useState(null);
   const [paymentInfo, setPaymentInfo] = useState({
     name: '', 
     email: '', 
@@ -21,11 +26,11 @@ const Checkout = () => {
   const [loading, setLoading] = useState(false);
 
   // If cart is empty, redirect to menu
-  React.useEffect(() => {
-    if (cart.length === 0) {
+  useEffect(() => {
+    if (cart.length === 0 && step !== 'summary') {
       navigate('/menu');
     }
-  }, [cart, navigate]);
+  }, [cart, navigate, step]);
 
   const handleChange = e => {
     const { name, value } = e.target;
@@ -49,7 +54,7 @@ const Checkout = () => {
     setPaymentInfo({ ...paymentInfo, cvc: e.target.value.replace(/\D/g, '').slice(0, 3) });
   };
 
-  const handleSubmit = e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const { name, email, address, cardNumber, expiryDate, cvc } = paymentInfo;
 
@@ -59,26 +64,63 @@ const Checkout = () => {
       return;
     }
 
-    // "Process" payment purely in the UI
     setError('');
     setLoading(true);
 
-    // Simulate a tiny delay so the user sees the spinner
-    setTimeout(() => {
-      // Store user info for summary
-      sessionStorage.setItem(
-        'userInfo',
-        JSON.stringify({ name, email, address })
-      );
+    try {
+      // Get token from localStorage
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('You must be logged in to checkout');
+      }
 
-      // Clear cart and advance to summary
-      setStep('summary');
+      // Prepare checkout data
+      const checkoutData = {
+        cartItems: cart,
+        shippingDetails: {
+          name,
+          email,
+          address
+        },
+        paymentDetails: {
+          method: 'Credit Card',
+          cardNumber,
+          expiryDate,
+          cvc
+        },
+        totalAmount: cartTotal
+      };
+
+      // Send checkout request to API
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      };
+
+      const response = await axios.post(`${API_URL}/checkout`, checkoutData, config);
+
+      if (response.data.success) {
+        // Store order ID
+        setOrderId(response.data.data.orderId);
+        
+        // Advance to summary
+        setStep('summary');
+      } else {
+        setError(response.data.message || 'Checkout failed');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      setError(error.response?.data?.message || error.message || 'Error processing checkout');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   const handleContinueShopping = () => {
-    // Clear cart and navigate to menu
+    // Clear cart
     cart.forEach(item => {
       removeFromCart(item.product_id || item.id);
     });
@@ -194,7 +236,19 @@ const Checkout = () => {
               disabled={loading}
               className="py-2"
             >
-              {loading ? "Processing..." : "Complete Purchase"}
+              {loading ? (
+                <>
+                  <Spinner 
+                    as="span" 
+                    animation="border" 
+                    size="sm" 
+                    role="status" 
+                    aria-hidden="true" 
+                    className="me-2"
+                  />
+                  Processing...
+                </>
+              ) : "Complete Purchase"}
             </Button>
           </div>
         </Form>
@@ -231,39 +285,35 @@ const Checkout = () => {
   );
 
   // Render Order Success
-  const renderOrderSuccess = () => {
-    const userInfo = JSON.parse(sessionStorage.getItem('userInfo') || '{}');
-    
-    return (
-      <Card className="shadow text-center">
-        <Card.Body className="py-5">
-          <div className="mb-4">
-            <div className="bg-success text-white rounded-circle d-inline-flex justify-content-center align-items-center" style={{ width: '80px', height: '80px' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" className="bi bi-check-lg" viewBox="0 0 16 16">
-                <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z"/>
-              </svg>
-            </div>
+  const renderOrderSuccess = () => (
+    <Card className="shadow text-center">
+      <Card.Body className="py-5">
+        <div className="mb-4">
+          <div className="bg-success text-white rounded-circle d-inline-flex justify-content-center align-items-center" style={{ width: '80px', height: '80px' }}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" className="bi bi-check-lg" viewBox="0 0 16 16">
+              <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z"/>
+            </svg>
           </div>
-          <h3 className="mb-3">Thank You for Your Order!</h3>
-          <p className="mb-4">Your order has been received and is being processed.</p>
-          <div className="card bg-light mb-4">
-            <div className="card-body text-start">
-              <p><strong>Name:</strong> {userInfo.name}</p>
-              <p><strong>Email:</strong> {userInfo.email}</p>
-              <p className="mb-0"><strong>Delivery Address:</strong> {userInfo.address}</p>
-            </div>
+        </div>
+        <h3 className="mb-3">Thank You for Your Order!</h3>
+        <p className="mb-4">Your order (ID: {orderId}) has been received and is being processed.</p>
+        <div className="card bg-light mb-4">
+          <div className="card-body text-start">
+            <p><strong>Name:</strong> {paymentInfo.name}</p>
+            <p><strong>Email:</strong> {paymentInfo.email}</p>
+            <p className="mb-0"><strong>Delivery Address:</strong> {paymentInfo.address}</p>
           </div>
-          <Button 
-            variant="primary" 
-            onClick={handleContinueShopping} 
-            className="px-4"
-          >
-            Continue Shopping
-          </Button>
-        </Card.Body>
-      </Card>
-    );
-  };
+        </div>
+        <Button 
+          variant="primary" 
+          onClick={handleContinueShopping} 
+          className="px-4"
+        >
+          Continue Shopping
+        </Button>
+      </Card.Body>
+    </Card>
+  );
 
   return (
     <Container className="pt-5 mt-4 pb-5">
