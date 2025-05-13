@@ -9,10 +9,9 @@ const Login = () => {
     username: '',
     password: ''
   });
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { login } = useAuth();
+  const { login, error } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -29,13 +28,11 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     
     const { username, password } = formData;
     
     // Validate form
     if (!username || !password) {
-      setError('Please fill out all fields');
       return;
     }
     
@@ -46,7 +43,8 @@ const Login = () => {
       // Navigate to previous page or homepage
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err.message);
+      // Error is handled by the AuthContext
+      console.error('Login error:', err);
     } finally {
       setLoading(false);
     }

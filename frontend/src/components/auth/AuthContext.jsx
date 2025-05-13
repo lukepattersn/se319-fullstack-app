@@ -1,5 +1,9 @@
 // src/components/auth/AuthContext.jsx
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import axios from 'axios';
+
+// API base URL
+const API_URL = 'http://localhost:3001/api';
 
 // Create the context
 const AuthContext = createContext();
@@ -15,99 +19,110 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Check if user is logged in on initial load
   useEffect(() => {
-    const username = getCookie('username');
-    if (username) {
-      setCurrentUser({ username });
+    // Check for token in localStorage
+    const token = localStorage.getItem('token');
+    
+    if (token) {
+      checkUserAuthentication(token);
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
-  // Helper function to get cookie
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-    return null;
-  };
+  // Check if token is valid by calling the /api/auth/me endpoint
+  const checkUserAuthentication = async (token) => {
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      };
 
-  // Helper function to set cookie with expiry
-  const setCookie = (name, value, days = 7) => {
-    const date = new Date();
-    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-    const expires = `expires=${date.toUTCString()}`;
-    document.cookie = `${name}=${value};${expires};path=/`;
-  };
-
-  // Function to simulate password hashing (in a real app, use bcrypt)
-  const hashPassword = (password) => {
-    // This is a simple hash for demo purposes only
-    // In a real application, use a proper hashing library
-    return btoa(password + "salt");
+      const { data } = await axios.get(`${API_URL}/auth/me`, config);
+      
+      if (data.success) {
+        setCurrentUser(data.user);
+      } else {
+        // If token is invalid, clear it
+        localStorage.removeItem('token');
+      }
+    } catch (error) {
+      console.error('Authentication error:', error);
+      localStorage.removeItem('token');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Register a new user
-  const register = (username, password) => {
-    // Check if username already exists
-    const existingUser = localStorage.getItem(username);
-    if (existingUser) {
-      throw new Error("Username already exists");
+  const register = async (username, email, password) => {
+    try {
+      setError(null);
+      
+      const response = await axios.post(`${API_URL}/auth/register`, {
+        username,
+        email,
+        password
+      });
+      
+      const { success, token, user, message } = response.data;
+      
+      if (success && token) {
+        // Save token to localStorage
+        localStorage.setItem('token', token);
+        
+        // Set current user
+        setCurrentUser(user);
+        
+        return user;
+      } else {
+        throw new Error(message || 'Registration failed');
+      }
+    } catch (error) {
+      setError(error.response?.data?.message || error.message);
+      throw error;
     }
-
-    // Hash password
-    const passwordHash = hashPassword(password);
-    
-    // Store user in localStorage (in a real app, this would be a database)
-    localStorage.setItem(username, JSON.stringify({
-      username,
-      passwordHash
-    }));
-
-    // Set cookies
-    setCookie('username', username);
-    setCookie('passwordHash', passwordHash);
-    
-    // Update current user
-    setCurrentUser({ username });
-    
-    return { username };
   };
 
   // Login user
-  const login = (username, password) => {
-    // Get user from localStorage
-    const userData = localStorage.getItem(username);
-    if (!userData) {
-      throw new Error("Invalid username or password");
+  const login = async (username, password) => {
+    try {
+      setError(null);
+      
+      const response = await axios.post(`${API_URL}/auth/login`, {
+        username,
+        password
+      });
+      
+      const { success, token, user, message } = response.data;
+      
+      if (success && token) {
+        // Save token to localStorage
+        localStorage.setItem('token', token);
+        
+        // Set current user
+        setCurrentUser(user);
+        
+        return user;
+      } else {
+        throw new Error(message || 'Login failed');
+      }
+    } catch (error) {
+      setError(error.response?.data?.message || error.message);
+      throw error;
     }
-
-    const user = JSON.parse(userData);
-    const passwordHash = hashPassword(password);
-    
-    // Verify password
-    if (user.passwordHash !== passwordHash) {
-      throw new Error("Invalid username or password");
-    }
-
-    // Set cookies
-    setCookie('username', username);
-    setCookie('passwordHash', passwordHash);
-    
-    // Update current user
-    setCurrentUser({ username });
-    
-    return { username };
   };
 
   // Logout user
   const logout = () => {
-    // Clear cookies
-    document.cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie = "passwordHash=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    // Remove token from localStorage
+    localStorage.removeItem('token');
     
-    // Update current user
+    // Clear current user
     setCurrentUser(null);
   };
 
@@ -116,7 +131,8 @@ export const AuthProvider = ({ children }) => {
     register,
     login,
     logout,
-    loading
+    loading,
+    error
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

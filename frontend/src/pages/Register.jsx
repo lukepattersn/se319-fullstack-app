@@ -7,13 +7,13 @@ import { useAuth } from '../components/auth/AuthContext';
 const Register = () => {
   const [formData, setFormData] = useState({
     username: '',
+    email: '',
     password: '',
     confirmPassword: ''
   });
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { register } = useAuth();
+  const { register, error } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -26,34 +26,31 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     
-    const { username, password, confirmPassword } = formData;
+    const { username, email, password, confirmPassword } = formData;
     
     // Validate form
-    if (!username || !password || !confirmPassword) {
-      setError('Please fill out all fields');
+    if (!username || !email || !password || !confirmPassword) {
       return;
     }
     
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
       return;
     }
     
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
       return;
     }
     
     try {
       setLoading(true);
-      await register(username, password);
+      await register(username, email, password);
       
       // Navigate to homepage after successful registration
       navigate('/');
     } catch (err) {
-      setError(err.message);
+      // Error is handled by the AuthContext
+      console.error('Registration error:', err);
     } finally {
       setLoading(false);
     }
@@ -79,6 +76,18 @@ const Register = () => {
                     value={formData.username}
                     onChange={handleChange}
                     placeholder="Choose a username"
+                    required
+                  />
+                </Form.Group>
+                
+                <Form.Group className="mb-3">
+                  <Form.Label>Email</Form.Label>
+                  <Form.Control
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="Enter your email"
                     required
                   />
                 </Form.Group>
