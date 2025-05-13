@@ -25,9 +25,14 @@ const startServer = async () => {
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
 
-    // Routes - only register after database is connected
+    // Routes - register after database is connected
     app.use('/api/menu', require('./api/routes/menu'));
     app.use('/api/static', require('./api/routes/static'));
+    
+    // New routes for authentication, orders, and checkout
+    app.use('/api/auth', require('./api/routes/auth'));
+    app.use('/api/orders', require('./api/routes/orders'));
+    app.use('/api/checkout', require('./api/routes/checkout'));
 
     // Basic route
     app.get('/', (req, res) => {
